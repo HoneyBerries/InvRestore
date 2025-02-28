@@ -71,13 +71,18 @@ public class RestoreCommand implements TabExecutor {
             ItemStack[] inventory = InventorySerializer.deserializeInventory(serializedInventory);
 
             if (inventory != null) {
+                // Restore the inventory
                 target.getInventory().setContents(inventory);
                 target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
                 sender.sendMessage(Component.text("Inventory restored for " + target.getName()).color(NamedTextColor.GREEN));
-            } else {
+            }
+
+            else {
+                // If deserialization fails, notify the sender
                 sender.sendMessage(Component.text("Failed to restore inventory.").color(NamedTextColor.RED));
             }
         } else {
+            // If no saved inventory is found, notify the sender
             sender.sendMessage(Component.text("No saved inventory found.").color(NamedTextColor.YELLOW));
         }
 
