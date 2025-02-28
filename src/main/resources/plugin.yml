@@ -1,0 +1,17 @@
+name: InvRestore
+version: '1.0.0'
+main: me.honeyberries.invRestore.InvRestore
+api-version: 1.21
+authors: [ HoneyBerries ]
+description: A plugin that allows players to restore their inventory upon death using the /restore command.
+
+commands:
+  restore:
+    description: Restores the inventory of the specified player or yourself.
+    usage: /restore [player]
+    aliases: [res, invrestore, invres]
+
+permissions:
+  invrestore.restore:
+    description: Allows the use of the /restore command to restore inventories.
+    default: op
