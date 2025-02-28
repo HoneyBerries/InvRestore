@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -52,13 +53,13 @@ public class RestoreCommand implements TabExecutor {
             if (sender instanceof Player) {
                 target = (Player) sender;
             } else {
-                sender.sendMessage(Component.text("Console must specify a player.").color(NamedTextColor.RED));
+                sender.sendMessage(Component.text("Console must specify a player.").color(NamedTextColor.YELLOW));
                 return true;
             }
         } else {
             target = Bukkit.getPlayer(args[0]);
             if (target == null) {
-                sender.sendMessage(Component.text("Player not found.").color(NamedTextColor.RED));
+                sender.sendMessage(Component.text("Player not found.").color(NamedTextColor.YELLOW));
                 return true;
             }
         }
@@ -71,6 +72,7 @@ public class RestoreCommand implements TabExecutor {
 
             if (inventory != null) {
                 target.getInventory().setContents(inventory);
+                target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
                 sender.sendMessage(Component.text("Inventory restored for " + target.getName()).color(NamedTextColor.GREEN));
             } else {
                 sender.sendMessage(Component.text("Failed to restore inventory.").color(NamedTextColor.RED));
