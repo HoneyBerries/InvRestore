@@ -23,6 +23,7 @@ public final class InvRestore extends JavaPlugin {
 
         // Register commands
         Objects.requireNonNull(getCommand("restore")).setExecutor(new RestoreCommand());
+        Objects.requireNonNull(getCommand("invsave")).setExecutor(new InventorySaveCommand());
 
     }
 
