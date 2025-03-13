@@ -16,15 +16,19 @@ public final class InvRestore extends JavaPlugin {
      */
     @Override
     public void onEnable() {
-        getServer().getLogger().info("InvRestore has been enabled!");
+        getLogger().info("InvRestore has been enabled!");
+
+        // Load the plugin configuration
+        PlayerInventoryData.getInstance().load();
 
         // Register events (pass plugin instance)
         getServer().getPluginManager().registerEvents(new DeathListener(), this);
+        getServer().getPluginManager().registerEvents(new GUIListener(), this);
 
         // Register commands
         Objects.requireNonNull(getCommand("restore")).setExecutor(new RestoreCommand());
         Objects.requireNonNull(getCommand("invsave")).setExecutor(new InventorySaveCommand());
-
+        Objects.requireNonNull(getCommand("invview")).setExecutor(new InventoryViewCommand());
     }
 
     /**
@@ -32,8 +36,9 @@ public final class InvRestore extends JavaPlugin {
      */
     @Override
     public void onDisable() {
-        getServer().getLogger().info("InvRestore has been disabled!");
+        getLogger().info("InvRestore has been disabled!");
     }
+
 
     /**
      * Gets the instance of the InvRestore plugin.
@@ -43,4 +48,5 @@ public final class InvRestore extends JavaPlugin {
     public static InvRestore getInstance() {
         return getPlugin(InvRestore.class);
     }
+
 }

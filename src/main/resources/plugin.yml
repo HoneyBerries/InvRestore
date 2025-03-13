@@ -8,12 +8,16 @@ description: A plugin that allows players to restore their inventory upon death 
 commands:
   restore:
     description: Restores the inventory of the specified player or yourself.
-    usage: /restore [player]
-    aliases: [res, invrestore, invres]
+    usage: /restore <death|save> [player]
+    aliases: [invrestore, invres]
   invsave:
     description: Saves your current inventory
     usage: /invsave [player]
     aliases: [inventorysave, saveinv, saveinventory]
+  invview:
+    description: View a player's saved or death inventory.
+    usage: /<command> <player> <death|save>
+    aliases: [invview, inventoryview, viewinv, viewinventory]
 
 permissions:
   invrestore.restore:
@@ -22,3 +26,6 @@ permissions:
   invrestore.save:
     description: Allows you to save your inventory.
     default: true
+  invrestore.view:
+    description: Allows you to view the saved inventories of other players.
+    default: op

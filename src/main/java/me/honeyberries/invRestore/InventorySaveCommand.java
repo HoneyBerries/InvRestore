@@ -3,29 +3,47 @@ package me.honeyberries.invRestore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Handles the /invsave command, which allows players to save their inventory
+ * into the YAML file for later restoration.
+ */
 public class InventorySaveCommand implements TabExecutor {
+
+    // Instance of the main plugin class to access plugin methods and data
+    private final InvRestore plugin = InvRestore.getInstance();
+
+    // Instance of PlayerInventoryData to access inventory data
+    private final PlayerInventoryData playerInventoryData = PlayerInventoryData.getInstance();
+
+    private static final String SAVE_PERMISSION = "invrestore.save";
+
+    /**
+     * Executes the /invsave command.
+     *
+     * @param sender  The command sender (player or console).
+     * @param command The command executed.
+     * @param label   The alias used.
+     * @param args    The command arguments.
+     * @return True if the command executed successfully, false otherwise.
+     */
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
 
         // Check if sender has permission to use the command
-        if (!sender.hasPermission("invrestore.save")) {
-            sender.sendMessage(Component.text("You do not have permission to use this command")
-                    .color(NamedTextColor.RED));
+        if (!sender.hasPermission(SAVE_PERMISSION)) {
+            sender.sendMessage(Component.text("You do not have permission to use this command").color(NamedTextColor.RED));
             return true;
         }
 
@@ -37,70 +55,78 @@ public class InventorySaveCommand implements TabExecutor {
 
         Player target;
 
+        // If no arguments, assume sender wants to save their own inventory
         if (args.length == 0) {
-
             if (sender instanceof Player) {
                 target = (Player) sender;
-
             } else {
                 sender.sendMessage(Component.text("Console must specify a player.").color(NamedTextColor.YELLOW));
                 return true;
             }
         } else {
+            // If one argument is provided, attempt to find the specified player
             target = Bukkit.getPlayer(args[0]);
             if (target == null) {
-                sender.sendMessage(Component.text("Player not found.").color(NamedTextColor.YELLOW));
+                sender.sendMessage(Component.text("Player not found.").color(NamedTextColor.RED));
                 return true;
             }
         }
-        PersistentDataContainer pdc = target.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(InvRestore.getInstance(), "inventory");
 
+        // Get the player's inventory contents
         ItemStack[] contents = target.getInventory().getContents();
 
+        // Save the player's inventory to the YAML file
+        playerInventoryData.saveInventory(target, contents, false);
 
-        // Serialize inventory to Base64
-        String serializedInventory = InventorySerializer.serializeInventory(contents);
-
-        if (serializedInventory == null) {
-            InvRestore.getInstance().getLogger().warning("Failed to serialize inventory for " + target.getName());
-            sender.sendMessage(Component.text("Failed to save inventory for " + target.getName()).color(NamedTextColor.RED));
-            return true;
-        }
-
-        // Store in PDC
-        pdc.set(key, PersistentDataType.STRING, serializedInventory);
-
-        // Send message
+        // Notify the sender that the inventory was saved successfully
         sender.sendMessage(Component.text("Inventory saved for " + target.getName()).color(NamedTextColor.GREEN));
 
-        // Play sound
+        if (sender != target) {
+            target.sendMessage(Component.text("Inventory saved by " + sender.getName()).color(NamedTextColor.GREEN));
+        }
+
+        // Play a success sound for the target player
         target.playSound(target.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+
         return true;
-
-
     }
 
+    /**
+     * Provides tab completion for the /invsave command.
+     *
+     * @param sender The command sender.
+     * @param command The command executed.
+     * @param alias The alias used.
+     * @param args The command arguments.
+     * @return A list of suggested completions.
+     */
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
-
         List<String> suggestions = new ArrayList<>();
 
         if (args.length == 1) {
-
             suggestions.add("help");
-            List<String> playerList =  Bukkit.getOnlinePlayers().stream().map(HumanEntity::getName).toList();
 
+            // Add all online players' names to the suggestions list
+            List<String> playerList = Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .toList();
             suggestions.addAll(playerList);
         }
-        return suggestions.stream().filter(s -> s.toLowerCase().
-                startsWith(args[args.length - 1].toLowerCase())).toList();
+
+        // Filter suggestions to match input
+        return suggestions.stream()
+                .filter(s -> s.toLowerCase().startsWith(args[args.length - 1].toLowerCase()))
+                .toList();
     }
 
-
-
+    /**
+     * Sends a help message to the command sender.
+     *
+     * @param sender The command sender.
+     */
     private void sendHelpMessage(CommandSender sender) {
-        sender.sendMessage(Component.text("=== Inventory Save Help ===").color(NamedTextColor.GOLD));
+        sender.sendMessage(Component.text("--- Inventory Save Help ---").color(NamedTextColor.GOLD));
         sender.sendMessage(Component.text("/invsave").color(NamedTextColor.AQUA)
                 .append(Component.text(" - Save your own inventory.")));
         sender.sendMessage(Component.text("/invsave <player>").color(NamedTextColor.AQUA)

@@ -3,15 +3,12 @@ package me.honeyberries.invRestore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +18,16 @@ import java.util.List;
  * Allows players to restore their last saved inventory upon death.
  */
 public class RestoreCommand implements TabExecutor {
+
+    // Instance of the main plugin class to access plugin methods and data
+    private final InvRestore plugin = InvRestore.getInstance();
+
+    // Instance of PlayerInventoryData to access inventory data
+    private final PlayerInventoryData playerInventoryData = PlayerInventoryData.getInstance();
+
+    private static final String RESTORE_PERMISSION = "invrestore.restore";
+
+
 
     /**
      * Executes the /restore command.
@@ -35,54 +42,87 @@ public class RestoreCommand implements TabExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
 
         // Check if sender has permission to use the command
-        if (!sender.hasPermission("invrestore.restore")) {
-            sender.sendMessage(Component.text("You do not have permission to use this command")
+        if (!sender.hasPermission(RESTORE_PERMISSION)) {
+            sender.sendMessage(Component.text("You do not have permission to use this command.")
                     .color(NamedTextColor.RED));
-            return true;
-        }
-
-        // Show help message if "help" is entered or too many arguments are given
-        if (args.length > 1 || (args.length == 1 && args[0].equalsIgnoreCase("help"))) {
-            sendHelpMessage(sender);
             return true;
         }
 
         Player target;
 
-        if (args.length == 0) {
-            if (sender instanceof Player) {
-                target = (Player) sender;
-            } else {
-                sender.sendMessage(Component.text("Console must specify a player.").color(NamedTextColor.YELLOW));
+        // Determine the target player based on arguments
+        if (args.length == 1 && sender instanceof Player player) {
+            target = player;
+
+        } else if (args.length == 2) {
+            target = Bukkit.getPlayer(args[1]);
+            if (target == null) {
+                sender.sendMessage(Component.text("Player not found.").color(NamedTextColor.RED));
                 return true;
             }
         } else {
-            target = Bukkit.getPlayer(args[0]);
-            if (target == null) {
-                sender.sendMessage(Component.text("Player not found.").color(NamedTextColor.YELLOW));
-                return true;
-            }
+            sendHelpMessage(sender);
+            return true;
         }
 
-        PersistentDataContainer pdc = target.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(InvRestore.getInstance(), "inventory");
-        if (pdc.has(key, PersistentDataType.STRING)) {
-            String serializedInventory = pdc.get(key, PersistentDataType.STRING);
-            ItemStack[] inventory = InventorySerializer.deserializeInventory(serializedInventory);
+        // Determine which inventory to restore (death or save)
+        String inventoryType = getInventoryType(args[0]);
+        if (inventoryType.equals("invalid")) {
+            sendHelpMessage(sender);
+            return true;
+        }
 
-            if (inventory != null) {
-                // Restore the inventory
-                target.getInventory().setContents(inventory);
-                target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-                sender.sendMessage(Component.text("Inventory restored for " + target.getName()).color(NamedTextColor.GREEN));
-            }
+        boolean isDeathInventory = inventoryType.equals("death");
 
-            else {
-                // If deserialization fails, notify the sender
-                sender.sendMessage(Component.text("Failed to restore inventory.").color(NamedTextColor.RED));
-            }
+        // Attempt to retrieve and restore inventory
+        return restoreInventory(sender, target, isDeathInventory);
+    }
+
+    /**
+     * Retrieves the appropriate inventory type based on the argument.
+     *
+     * @param arg The argument passed by the user.
+     * @return "death" if it's a death inventory, "save" if it's a save inventory, or "invalid" if the argument is invalid.
+     */
+    private @NotNull String getInventoryType(@NotNull String arg) {
+        String lowerCaseArg = arg.toLowerCase();
+        if (lowerCaseArg.equals("death")) {
+            return "death";
+        } else if (lowerCaseArg.equals("save")) {
+            return "save";
         } else {
-            // If no saved inventory is found, notify the sender
+            return "invalid";
+        }
+    }
+
+    /**
+     * Attempts to restore the player's inventory using the PlayerInventoryData.
+     *
+     * @param sender           The command sender.
+     * @param target           The player whose inventory is being restored.
+     * @param isDeathInventory True if restoring a death inventory, false for a save inventory.
+     * @return True if the inventory was successfully restored, false otherwise.
+     */
+    private boolean restoreInventory(CommandSender sender, Player target, boolean isDeathInventory) {
+
+        // Attempt to retrieve the inventory from PlayerInventoryData
+        ItemStack[] inventory = playerInventoryData.getSavedInventory(target, isDeathInventory);
+
+        // Check if inventory was found
+        if (inventory != null) {
+            target.getInventory().setContents(inventory);
+            target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+            sender.sendMessage(Component.text("Inventory successfully restored for " + target.getName())
+                    .color(NamedTextColor.GREEN));
+
+            // Notify the target player if the sender is not the target
+            if (sender != target) {
+                target.sendMessage(Component.text("Your inventory has been restored by " + sender.getName())
+                        .color(NamedTextColor.GREEN));
+            }
+
+        //Failure to restore inventory (shouldn't be called if inventory is not null)
+        } else {
             sender.sendMessage(Component.text("No saved inventory found.").color(NamedTextColor.YELLOW));
         }
 
@@ -95,18 +135,18 @@ public class RestoreCommand implements TabExecutor {
      * @param sender The command sender.
      */
     private void sendHelpMessage(CommandSender sender) {
-        sender.sendMessage(Component.text("=== Inventory Restore Help ===").color(NamedTextColor.GOLD));
-        sender.sendMessage(Component.text("/restore").color(NamedTextColor.AQUA)
-                .append(Component.text(" - Restore your own inventory.")));
-        sender.sendMessage(Component.text("/restore <player>").color(NamedTextColor.AQUA)
-                .append(Component.text(" - Restore another player's inventory.")));
-        sender.sendMessage(Component.text("/restore help").color(NamedTextColor.AQUA)
-                .append(Component.text(" - Show this help message.")));
+        sender.sendMessage(Component.text("---- Inventory Restore Help ----").color(NamedTextColor.GOLD));
+        sender.sendMessage(Component.text("/restore death").color(NamedTextColor.AQUA)
+                .append(Component.text(" - Restore your last inventory before death.")));
+        sender.sendMessage(Component.text("/restore save").color(NamedTextColor.AQUA)
+                .append(Component.text(" - Restore your last manually saved inventory.")));
+        sender.sendMessage(Component.text("/restore <death|save> <player>").color(NamedTextColor.AQUA)
+                .append(Component.text(" - Restore a player's inventory. ")));
     }
 
     /**
      * Handles tab completion for the /restore command.
-     * Suggests player names or "help" if appropriate.
+     * Suggests "death", "save", or player names.
      *
      * @param sender  The command sender (player or console).
      * @param command The command being executed.
@@ -116,24 +156,17 @@ public class RestoreCommand implements TabExecutor {
      */
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
-
         List<String> suggestions = new ArrayList<>();
 
-        // If the sender has permission, suggest player names or "help"
         if (args.length == 1) {
-            if (sender.hasPermission("invrestore.restore")) {
-                if ("help".startsWith(args[0].toLowerCase())) {
-                    suggestions.add("help");
-                }
-                // Suggest player names
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    if (player.getName().toLowerCase().startsWith(args[0].toLowerCase())) {
-                        suggestions.add(player.getName());
-                    }
-                }
+            suggestions.add("death");
+            suggestions.add("save");
+        } else if (args.length == 2) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                suggestions.add(player.getName());
             }
         }
 
-        return suggestions;
+        return suggestions.stream().filter(option -> option.toLowerCase().startsWith(args[args.length - 1].toLowerCase())).toList();
     }
 }
