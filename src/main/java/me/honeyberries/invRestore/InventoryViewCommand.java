@@ -3,120 +3,130 @@ package me.honeyberries.invRestore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
- * Command handler for the /invview command.
- * Allows players to view the saved inventory of another player in a GUI.
+ * Command executor for viewing a player's saved inventory.
  */
 public class InventoryViewCommand implements TabExecutor {
 
-    // Instance of the main plugin class to access plugin methods and data
     private final InvRestore plugin = InvRestore.getInstance();
-
-    // Instance of PlayerInventoryData to access inventory data
     private final PlayerInventoryData playerInventoryData = PlayerInventoryData.getInstance();
-
+    private static final String RESTORE_INVENTORY_METADATA = "restoreInventoryOpen";
     private static final String VIEW_PERMISSION = "invrestore.view";
 
     /**
-     * Executes the /invview command.
+     * Handles the execution of the command.
      *
-     * @param sender  The command sender (player or console).
-     * @param command The command executed.
-     * @param label   The alias used.
-     * @param args    The command arguments.
-     * @return True if the command executed successfully, false otherwise.
+     * @param sender  The sender of the command.
+     * @param command The command that was executed.
+     * @param label   The alias of the command used.
+     * @param args    The arguments passed to the command.
+     * @return true if the command was handled successfully, false otherwise.
      */
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
+                             @NotNull String label, @NotNull String[] args) {
 
-        // Check if sender has permission to use the command
         if (!sender.hasPermission(VIEW_PERMISSION)) {
-            sender.sendMessage(Component.text("You do not have permission to use this command").color(NamedTextColor.RED));
+            sender.sendMessage(Component.text("You do not have permission to use this command")
+                    .color(NamedTextColor.RED));
             return true;
         }
 
         if (!(sender instanceof Player playerSender)) {
-            sender.sendMessage(Component.text("This command can only be used by players.").color(NamedTextColor.RED));
+            sender.sendMessage(Component.text("This command can only be used by players.")
+                    .color(NamedTextColor.RED));
             return true;
         }
 
-        // Ensure there are exactly two arguments (inventory type and player, or just inventory type)
-        if (args.length < 1 || args.length > 2) {
+        if (args.length == 0 || (args.length == 1 && args[0].equalsIgnoreCase("help"))
+                || args.length > 2) {
             sendHelpMessage(sender);
             return true;
         }
 
-        // Get the inventory type (either "death" or "save")
-        String inventoryType = args[0].toLowerCase();
-
-
-        // Determine the target player
-        Player target;
-        if (args.length == 2) {
-            // If a second argument is provided, it must be the player
-            target = Bukkit.getPlayer(args[1]);
-            if (target == null) {
-                sender.sendMessage(Component.text("Player not found.").color(NamedTextColor.RED));
-                return true;
-            }
-
-        } else {
-            // If no player is specified, use the sender's inventory
-            target = (Player) sender;
-        }
-
-        // Retrieve the player's inventory data based on the type (death or saved)
-
-        ItemStack[] inventory = null;
-
-        // If the inventory type is "death", get the death inventory
-        if (inventoryType.equals("death")) {
-            inventory = playerInventoryData.getSavedInventory(target, true);
-
-        // If the inventory type is "save", get the saved inventory
-        } else if (inventoryType.equals("save")) {
-            inventory = playerInventoryData.getSavedInventory(target, false);
-        }
-
-        // If the inventory type is invalid, show help message
-        else {
-            sendHelpMessage(sender);
+        final String inventoryType = args[0].toLowerCase();
+        final Player target = getTargetPlayer(playerSender, args);
+        if (target == null) {
+            sender.sendMessage(Component.text("Player not found.").color(NamedTextColor.RED));
             return true;
         }
 
+        final ItemStack[] savedInventory = getSavedInventory(target, inventoryType);
 
-        // If inventory is null, no inventory was found
-        if (inventory == null) {
-            sender.sendMessage(Component.text("No saved inventory found for " + target.getName() + " with the specified type.")
-                    .color(NamedTextColor.YELLOW));
+        if (savedInventory == null) {
+            sender.sendMessage(Component.text("No saved inventory found for " + target.getName() +
+                    " with the specified type.").color(NamedTextColor.YELLOW));
             return true;
         }
 
+        final Inventory gui = createInventoryGUI(target, savedInventory);
 
-        // Create a new inventory with 54 slots for the player
-        Inventory gui = Bukkit.createInventory(null, 54, Component.text(target.getName() + "'s Inventory").color(NamedTextColor.GREEN));
+        // Open the inventory GUI for the player and set metadata to prevent item movement
+        playerSender.openInventory(gui);
+        playerSender.setMetadata(RESTORE_INVENTORY_METADATA, new FixedMetadataValue(plugin, true));
 
-        // Add items to the inventory (including armor slots)
-        for (int i = 0; i < inventory.length; i++) {
-            if (inventory[i] != null) {
-                gui.setItem(i, inventory[i]);
+        return true;
+    }
+
+    /**
+     * Retrieves the target player based on the command arguments.
+     *
+     * @param self The player executing the command.
+     * @param args The command arguments.
+     * @return The target player, or the player executing the command if no target is specified.
+     */
+    private Player getTargetPlayer(Player self, String[] args) {
+        return args.length == 2 ? Bukkit.getPlayer(args[1]) : self;
+    }
+
+    /**
+     * Retrieves the saved inventory for the specified player and type.
+     *
+     * @param target The target player.
+     * @param type   The type of inventory to retrieve (death or save).
+     * @return The saved inventory, or null if no inventory is found.
+     */
+    private ItemStack[] getSavedInventory(Player target, String type) {
+        if ("death".equals(type)) {
+            return playerInventoryData.getSavedInventory(target, true);
+        } else if ("save".equals(type)) {
+            return playerInventoryData.getSavedInventory(target, false);
+        }
+        return null;
+    }
+
+    /**
+     * Creates an inventory GUI for the specified player and inventory data.
+     *
+     * @param target        The target player.
+     * @param inventoryData The inventory data to display.
+     * @return The created inventory GUI.
+     */
+    private Inventory createInventoryGUI(Player target, ItemStack[] inventoryData) {
+        final Inventory gui = Bukkit.createInventory(null, 54,
+                Component.text(target.getName()).color(NamedTextColor.DARK_GREEN).append(Component.text("'s Inventory").color(NamedTextColor.GOLD)));
+
+        // Set the inventory items in the GUI
+        for (int i = 0; i < inventoryData.length; i++) {
+            if (inventoryData[i] != null) {
+                gui.setItem(i, inventoryData[i]);
             }
         }
 
-        // Add armor items to the top row (slots 36 to 39 in the GUI)
+        // Set the armor items in the GUI
         if (target.getInventory().getHelmet() != null) {
             gui.setItem(36, target.getInventory().getHelmet());
         }
@@ -129,54 +139,46 @@ public class InventoryViewCommand implements TabExecutor {
         if (target.getInventory().getBoots() != null) {
             gui.setItem(39, target.getInventory().getBoots());
         }
-
-        // Open the inventory GUI for the sender
-        playerSender.openInventory(gui);
-
-        return true;
+        return gui;
     }
 
     /**
-     * Sends a help message to the sender.
+     * Sends a help message to the command sender.
      *
-     * @param sender The command sender.
+     * @param sender The sender of the command.
      */
     private void sendHelpMessage(CommandSender sender) {
         sender.sendMessage(Component.text("--- Inventory View Help ---").color(NamedTextColor.GOLD));
-        sender.sendMessage(Component.text("/invview <death | save> <player>").color(NamedTextColor.AQUA)
+        sender.sendMessage(Component.text("/invview <death | save> <player>")
+                .color(NamedTextColor.AQUA)
                 .append(Component.text(" - View a player's last death or saved inventory.")));
-        sender.sendMessage(Component.text("/invview help").color(NamedTextColor.AQUA)
+        sender.sendMessage(Component.text("/invview help")
+                .color(NamedTextColor.AQUA)
                 .append(Component.text(" - Show this help message.")));
     }
 
     /**
-     * Handles tab completion for the /invview command.
+     * Handles tab completion for the command.
      *
-     * @param sender  The command sender (player or console).
-     * @param command The command being executed.
-     * @param alias   The alias used for the command.
-     * @param args    The arguments passed to the command.
-     * @return A list of possible tab completions.
+     * @param sender The sender of the command.
+     * @param command The command that was executed.
+     * @param alias The alias of the command used.
+     * @param args The arguments passed to the command.
+     * @return A list of possible completions for the final argument, or an empty list if no completions are available.
      */
     @Override
-    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
-        List<String> completions = new ArrayList<>();
-
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
+                                                @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            List<String> options = Arrays.asList("death", "save", "help");
-
-            completions = options.stream()
-                    .filter(option -> option != null && option.toLowerCase().startsWith(args[0].toLowerCase())) // Ensure option is not null
+            return Stream.of("death", "save", "help")
+                    .filter(option -> option.toLowerCase().startsWith(args[0].toLowerCase()))
                     .toList();
-
         } else if (args.length == 2) {
-            completions = Bukkit.getOnlinePlayers().stream()
+            return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase())) // Ensure name is not null
+                    .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
                     .toList();
         }
-
-        return completions;
+        return List.of();
     }
-
 }

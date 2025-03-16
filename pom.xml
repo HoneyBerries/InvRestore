@@ -1,24 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Improved Maven configuration file.
+  The file defines project coordinates, properties, build plugins, repositories, and dependencies.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Project coordinates -->
     <groupId>me.honeyberries</groupId>
     <artifactId>InvRestore</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
 
     <name>InvRestore</name>
 
+    <!-- Project properties -->
     <properties>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <!-- Build configuration -->
     <build>
+        <!-- Default goal to clean then package -->
         <defaultGoal>clean package</defaultGoal>
         <plugins>
+            <!-- Compiler plugin using defined Java version -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -28,6 +38,7 @@
                     <target>${java.version}</target>
                 </configuration>
             </plugin>
+            <!-- Shade plugin to create a fat jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -38,10 +49,12 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <!-- Optionally, you can configure artifact relocation or a final name here -->
                     </execution>
                 </executions>
             </plugin>
         </plugins>
+        <!-- Resource filtering configuration -->
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -50,6 +63,7 @@
         </resources>
     </build>
 
+    <!-- Repositories for dependencies -->
     <repositories>
         <repository>
             <id>papermc-repo</id>
@@ -61,7 +75,9 @@
         </repository>
     </repositories>
 
+    <!-- Project dependencies -->
     <dependencies>
+        <!-- Paper API dependency with provided scope -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>

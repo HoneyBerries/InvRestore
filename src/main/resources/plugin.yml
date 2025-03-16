@@ -1,5 +1,5 @@
 name: InvRestore
-version: '1.0.1'
+version: '1.0.2'
 main: me.honeyberries.invRestore.InvRestore
 api-version: 1.19
 authors: [ HoneyBerries ]
@@ -16,7 +16,7 @@ commands:
     aliases: [inventorysave, saveinv, saveinventory]
   invview:
     description: View a player's saved or death inventory.
-    usage: /<command> <player> <death|save>
+    usage: /invview <player> <death|save>
     aliases: [invview, inventoryview, viewinv, viewinventory]
 
 permissions:
