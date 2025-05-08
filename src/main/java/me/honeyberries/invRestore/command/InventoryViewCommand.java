@@ -1,5 +1,7 @@
-package me.honeyberries.invRestore;
+package me.honeyberries.invRestore.command;
 
+import me.honeyberries.invRestore.InvRestore;
+import me.honeyberries.invRestore.storage.PlayerInventoryData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -23,7 +25,7 @@ public class InventoryViewCommand implements TabExecutor {
 
     private final InvRestore plugin = InvRestore.getInstance();
     private final PlayerInventoryData playerInventoryData = PlayerInventoryData.getInstance();
-    private static final String RESTORE_INVENTORY_METADATA = "restoreInventoryOpen";
+    private static final String RESTORE_INVENTORY_METADATA = InvRestore.getInstance().RESTORE_INVENTORY_METADATA;
     private static final String VIEW_PERMISSION = "invrestore.view";
 
     /**
@@ -40,7 +42,7 @@ public class InventoryViewCommand implements TabExecutor {
                              @NotNull String label, @NotNull String[] args) {
 
         if (!sender.hasPermission(VIEW_PERMISSION)) {
-            sender.sendMessage(Component.text("You do not have permission to use this command")
+            sender.sendMessage(Component.text("You do not have permission to use this command.")
                     .color(NamedTextColor.RED));
             return true;
         }
@@ -126,19 +128,8 @@ public class InventoryViewCommand implements TabExecutor {
             }
         }
 
-        // Set the armor items in the GUI
-        if (target.getInventory().getHelmet() != null) {
-            gui.setItem(36, target.getInventory().getHelmet());
-        }
-        if (target.getInventory().getChestplate() != null) {
-            gui.setItem(37, target.getInventory().getChestplate());
-        }
-        if (target.getInventory().getLeggings() != null) {
-            gui.setItem(38, target.getInventory().getLeggings());
-        }
-        if (target.getInventory().getBoots() != null) {
-            gui.setItem(39, target.getInventory().getBoots());
-        }
+        // Note: The armor items are already included in the inventoryData array
+        // No need to set them separately from the current player's inventory
         return gui;
     }
 
@@ -149,10 +140,10 @@ public class InventoryViewCommand implements TabExecutor {
      */
     private void sendHelpMessage(CommandSender sender) {
         sender.sendMessage(Component.text("--- Inventory View Help ---").color(NamedTextColor.GOLD));
-        sender.sendMessage(Component.text("/invview <death | save> <player>")
+        sender.sendMessage(Component.text("/inventorysaveview <death | save> <player>")
                 .color(NamedTextColor.AQUA)
                 .append(Component.text(" - View a player's last death or saved inventory.")));
-        sender.sendMessage(Component.text("/invview help")
+        sender.sendMessage(Component.text("/inventorysaveview help")
                 .color(NamedTextColor.AQUA)
                 .append(Component.text(" - Show this help message.")));
     }

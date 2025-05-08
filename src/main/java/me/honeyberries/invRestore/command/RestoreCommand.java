@@ -1,5 +1,7 @@
-package me.honeyberries.invRestore;
+package me.honeyberries.invRestore.command;
 
+import me.honeyberries.invRestore.InvRestore;
+import me.honeyberries.invRestore.storage.PlayerInventoryData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -10,6 +12,8 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +38,7 @@ public class RestoreCommand implements TabExecutor {
      *
      * @param sender  The command sender (player or console).
      * @param command The command being executed.
-     * @param label   The command label (e.g., "restore").
+     * @param label   The command label (for example, "restore").
      * @param args    The command arguments.
      * @return True if the command was executed successfully, false otherwise.
      */
@@ -48,28 +52,36 @@ public class RestoreCommand implements TabExecutor {
             return true;
         }
 
-        Player target;
-
-        // Determine the target player based on arguments
-        if (args.length == 1 && sender instanceof Player player) {
-            target = player;
-
-        } else if (args.length == 2) {
-            target = Bukkit.getPlayer(args[1]);
-            if (target == null) {
-                sender.sendMessage(Component.text("Player not found.").color(NamedTextColor.RED));
-                return true;
-            }
-        } else {
+        // Check if command has the correct number of arguments
+        if (args.length < 1 || args.length > 2) {
             sendHelpMessage(sender);
             return true;
         }
 
         // Determine which inventory to restore (death or save)
         String inventoryType = getInventoryType(args[0]);
-        if (inventoryType.equals("invalid")) {
+        if (inventoryType == null) {
             sendHelpMessage(sender);
             return true;
+        }
+
+        Player target;
+
+        // Determine the target player based on arguments
+        if (args.length == 1) {
+            if (sender instanceof Player player) {
+                target = player;
+            } else {
+                sender.sendMessage(Component.text("Console must specify a player.")
+                        .color(NamedTextColor.RED));
+                return true;
+            }
+        } else { // args.length == 2
+            target = Bukkit.getPlayer(args[1]);
+            if (target == null) {
+                sender.sendMessage(Component.text("Player not found.").color(NamedTextColor.RED));
+                return true;
+            }
         }
 
         boolean isDeathInventory = inventoryType.equals("death");
@@ -77,22 +89,21 @@ public class RestoreCommand implements TabExecutor {
         // Attempt to retrieve and restore inventory
         return restoreInventory(sender, target, isDeathInventory);
     }
-
     /**
      * Retrieves the appropriate inventory type based on the argument.
      *
      * @param arg The argument passed by the user.
-     * @return "death" if it's a death inventory, "save" if it's a save inventory, or "invalid" if the argument is invalid.
+     * @return "death" if it is a death inventory, "save" if it is a save inventory, or null if the argument is invalid.
      */
-    private @NotNull String getInventoryType(@NotNull String arg) {
+    private @Nullable String getInventoryType(@NotNull String arg) {
         String lowerCaseArg = arg.toLowerCase();
         if (lowerCaseArg.equals("death")) {
             return "death";
         } else if (lowerCaseArg.equals("save")) {
             return "save";
-        } else {
-            return "invalid";
-        }
+
+        } else return null;
+
     }
 
     /**
@@ -117,11 +128,12 @@ public class RestoreCommand implements TabExecutor {
 
             // Notify the target player if the sender is not the target
             if (sender != target) {
-                target.sendMessage(Component.text("Your inventory has been restored by " + sender.getName())
+                String senderName = (sender instanceof Player) ? sender.getName() : "Console";
+                target.sendMessage(Component.text("Your inventory has been restored by " + senderName)
                         .color(NamedTextColor.GREEN));
             }
 
-        //Failure to restore inventory (shouldn't be called if inventory is not null)
+        // Failure to restore inventory (no saved inventory found)
         } else {
             sender.sendMessage(Component.text("No saved inventory found.").color(NamedTextColor.YELLOW));
         }
@@ -136,12 +148,12 @@ public class RestoreCommand implements TabExecutor {
      */
     private void sendHelpMessage(CommandSender sender) {
         sender.sendMessage(Component.text("---- Inventory Restore Help ----").color(NamedTextColor.GOLD));
-        sender.sendMessage(Component.text("/restore death").color(NamedTextColor.AQUA)
+        sender.sendMessage(Component.text("/inventoryrestore death").color(NamedTextColor.AQUA)
                 .append(Component.text(" - Restore your last inventory before death.")));
-        sender.sendMessage(Component.text("/restore save").color(NamedTextColor.AQUA)
+        sender.sendMessage(Component.text("/inventoryrestore save").color(NamedTextColor.AQUA)
                 .append(Component.text(" - Restore your last manually saved inventory.")));
-        sender.sendMessage(Component.text("/restore <death|save> <player>").color(NamedTextColor.AQUA)
-                .append(Component.text(" - Restore a player's inventory. ")));
+        sender.sendMessage(Component.text("/inventoryrestore <death|save> <player>").color(NamedTextColor.AQUA)
+                .append(Component.text(" - Restore a player's inventory.")));
     }
 
     /**
@@ -167,6 +179,7 @@ public class RestoreCommand implements TabExecutor {
             }
         }
 
-        return suggestions.stream().filter(option -> option.toLowerCase().startsWith(args[args.length - 1].toLowerCase())).toList();
+        return suggestions.stream().filter(option ->
+                option.toLowerCase().startsWith(args[args.length - 1].toLowerCase())).toList();
     }
 }

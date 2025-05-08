@@ -1,5 +1,7 @@
-package me.honeyberries.invRestore;
+package me.honeyberries.invRestore.storage;
 
+import me.honeyberries.invRestore.InvRestore;
+import me.honeyberries.invRestore.util.InventorySerializer;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -61,7 +63,7 @@ public class PlayerInventoryData {
     public void saveInventory(Player player, ItemStack[] inventory, boolean isDeathInventory) {
         if (inventory == null) return;
 
-        String serializedInventory = InventorySerializer.serializeInventory(inventory);
+        String serializedInventory = InventorySerializer.serializeInventory(inventory, player);
         if (serializedInventory == null) {
             plugin.getLogger().warning("Failed to serialize inventory for " + player.getName());
             return;
@@ -72,7 +74,6 @@ public class PlayerInventoryData {
         } else {
             set(INVENTORY_PATH + player.getUniqueId() + ".save", serializedInventory);
         }
-
     }
 
     /**
@@ -91,7 +92,7 @@ public class PlayerInventoryData {
             return null;
         }
 
-        ItemStack[] inventory = InventorySerializer.deserializeInventory(serializedInventory);
+        ItemStack[] inventory = InventorySerializer.deserializeInventory(serializedInventory, player);
         if (inventory == null) {
             plugin.getLogger().warning("Failed to deserialize inventory for " + player.getName());
             return null;
@@ -100,12 +101,11 @@ public class PlayerInventoryData {
         return inventory;
     }
 
-
-
-     /** Sets a value in the configuration and saves the updated configuration file.
-      *
-      * @param path  the configuration path.
-      * @param value the value to set.
+    /**
+     * Sets a value in the configuration and saves the updated configuration file.
+     *
+     * @param path  the configuration path.
+     * @param value the value to set.
      */
     public void set(@NotNull String path, @Nullable Object value) {
         yamlConfig.set(path, value);
@@ -122,6 +122,15 @@ public class PlayerInventoryData {
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save inventories.yml!");
         }
+    }
+
+    /**
+     * Public method to save all data.
+     * This should be called when the plugin is being disabled.
+     */
+    public void save() {
+        saveConfig();
+        plugin.getLogger().info("Saved all inventory data!");
     }
 
 }

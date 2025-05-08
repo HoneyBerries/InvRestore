@@ -1,18 +1,26 @@
 package me.honeyberries.invRestore;
 
+import me.honeyberries.invRestore.command.InventorySaveCommand;
+import me.honeyberries.invRestore.command.InventoryViewCommand;
+import me.honeyberries.invRestore.command.RestoreCommand;
+import me.honeyberries.invRestore.listener.DeathListener;
+import me.honeyberries.invRestore.listener.GUIListener;
+import me.honeyberries.invRestore.storage.PlayerInventoryData;
 import org.bukkit.plugin.java.JavaPlugin;
-
 import java.util.Objects;
 
 /**
  * The main plugin class for InvRestore.
- * This plugin allows players to restore their inventory upon death using the /restore command.
+ * This plugin allows players to save, view, and restore their inventories.
  */
 public final class InvRestore extends JavaPlugin {
 
+    public final String RESTORE_INVENTORY_METADATA = "restoreInventoryOpen";
+
+
     /**
      * Called when the plugin is enabled.
-     * Registers the DeathListener and the RestoreCommand.
+     * Registers listeners and commands.
      */
     @Override
     public void onEnable() {
@@ -21,21 +29,25 @@ public final class InvRestore extends JavaPlugin {
         // Load the plugin configuration
         PlayerInventoryData.getInstance().load();
 
-        // Register events (pass plugin instance)
+        // Register events
         getServer().getPluginManager().registerEvents(new DeathListener(), this);
         getServer().getPluginManager().registerEvents(new GUIListener(), this);
 
-        // Register commands
-        Objects.requireNonNull(getCommand("restore")).setExecutor(new RestoreCommand());
-        Objects.requireNonNull(getCommand("invsave")).setExecutor(new InventorySaveCommand());
-        Objects.requireNonNull(getCommand("invview")).setExecutor(new InventoryViewCommand());
+        // Register commands with their correct base names from plugin.yml
+        Objects.requireNonNull(getCommand("inventoryrestore")).setExecutor(new RestoreCommand());
+        Objects.requireNonNull(getCommand("inventorysave")).setExecutor(new InventorySaveCommand());
+        Objects.requireNonNull(getCommand("inventorysaveview")).setExecutor(new InventoryViewCommand());
     }
 
     /**
      * Called when the plugin is disabled.
+     * Ensures all data is saved before shutdown.
      */
     @Override
     public void onDisable() {
+        // Save any pending data
+        PlayerInventoryData.getInstance().save();
+
         getLogger().info("InvRestore has been disabled!");
     }
 
@@ -50,3 +62,4 @@ public final class InvRestore extends JavaPlugin {
     }
 
 }
+

@@ -1,5 +1,6 @@
-package me.honeyberries.invRestore;
+package me.honeyberries.invRestore.listener;
 
+import me.honeyberries.invRestore.InvRestore;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -12,7 +13,7 @@ import org.bukkit.inventory.Inventory;
  */
 public class GUIListener implements Listener {
 
-    private static final String RESTORE_INVENTORY_METADATA = "restoreInventoryOpen";
+    private static final String RESTORE_INVENTORY_METADATA = InvRestore.getInstance().RESTORE_INVENTORY_METADATA;
     private final InvRestore plugin = InvRestore.getInstance();
 
     /**

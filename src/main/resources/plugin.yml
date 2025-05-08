@@ -1,31 +1,31 @@
 name: InvRestore
-version: '1.0.2'
+version: '1.1.0'
 main: me.honeyberries.invRestore.InvRestore
-api-version: 1.19
+api-version: 1.21
 authors: [ HoneyBerries ]
-description: A plugin that allows players to restore their inventory upon death using the /restore command.
-
+description: A plugin that allows players to save, view, and restore their inventories with ease.
+folia-supported: true
 commands:
-  restore:
-    description: Restores the inventory of the specified player or yourself.
-    usage: /restore <death|save> [player]
-    aliases: [invrestore, invres]
-  invsave:
-    description: Saves your current inventory
-    usage: /invsave [player]
-    aliases: [inventorysave, saveinv, saveinventory]
-  invview:
-    description: View a player's saved or death inventory.
-    usage: /invview <player> <death|save>
-    aliases: [invview, inventoryview, viewinv, viewinventory]
+  inventoryrestore:
+    description: Restore a saved or last-death inventory for yourself or another player.
+    usage: /inventoryrestore <death|save> [player]
+    aliases: [restore, invrestore, invres]
+  inventorysave:
+    description: Save your current inventory or another player's inventory for later recovery.
+    usage: /inventorysave [player]
+    aliases: [invsave, saveinv]
+  inventorysaveview:
+    description: View a saved or death inventory for yourself or another player.
+    usage: /inventorysaveview <death|save> [player]
+    aliases: [invsaveview, viewsave]
 
 permissions:
   invrestore.restore:
-    description: Allows the use of the /restore command to restore inventories.
+    description: Grants permission to restore inventories using the /restore command.
     default: op
   invrestore.save:
-    description: Allows you to save your inventory.
+    description: Grants permission to save your own or another player's inventory.
     default: true
   invrestore.view:
-    description: Allows you to view the saved inventories of other players.
+    description: Grants permission to view saved or death inventories of other players.
     default: op

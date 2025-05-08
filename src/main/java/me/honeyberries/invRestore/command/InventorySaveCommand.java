@@ -1,5 +1,7 @@
-package me.honeyberries.invRestore;
+package me.honeyberries.invRestore.command;
 
+import me.honeyberries.invRestore.InvRestore;
+import me.honeyberries.invRestore.storage.PlayerInventoryData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -11,7 +13,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,7 +44,7 @@ public class InventorySaveCommand implements TabExecutor {
 
         // Check if sender has permission to use the command
         if (!sender.hasPermission(SAVE_PERMISSION)) {
-            sender.sendMessage(Component.text("You do not have permission to use this command").color(NamedTextColor.RED));
+            sender.sendMessage(Component.text("You do not have permission to use this command.").color(NamedTextColor.RED));
             return true;
         }
 
@@ -82,7 +83,8 @@ public class InventorySaveCommand implements TabExecutor {
         sender.sendMessage(Component.text("Inventory saved for " + target.getName()).color(NamedTextColor.GREEN));
 
         if (sender != target) {
-            target.sendMessage(Component.text("Inventory saved by " + sender.getName()).color(NamedTextColor.GREEN));
+            String senderName = (sender instanceof Player) ? ((Player) sender).getName() : "Console";
+            target.sendMessage(Component.text("Inventory saved by " + senderName).color(NamedTextColor.GREEN));
         }
 
         // Play a success sound for the target player
@@ -127,11 +129,11 @@ public class InventorySaveCommand implements TabExecutor {
      */
     private void sendHelpMessage(CommandSender sender) {
         sender.sendMessage(Component.text("--- Inventory Save Help ---").color(NamedTextColor.GOLD));
-        sender.sendMessage(Component.text("/invsave").color(NamedTextColor.AQUA)
+        sender.sendMessage(Component.text("/inventorysave").color(NamedTextColor.AQUA)
                 .append(Component.text(" - Save your own inventory.")));
-        sender.sendMessage(Component.text("/invsave <player>").color(NamedTextColor.AQUA)
+        sender.sendMessage(Component.text("/inventorysave <player>").color(NamedTextColor.AQUA)
                 .append(Component.text(" - Save another player's inventory.")));
-        sender.sendMessage(Component.text("/invsave help").color(NamedTextColor.AQUA)
+        sender.sendMessage(Component.text("/inventorysave help").color(NamedTextColor.AQUA)
                 .append(Component.text(" - Show this help message.")));
     }
 }
