@@ -1,7 +1,8 @@
 package me.honeyberries.invRestore.command;
 
 import me.honeyberries.invRestore.InvRestore;
-import me.honeyberries.invRestore.storage.PlayerInventoryData;
+import me.honeyberries.invRestore.storage.PlayerDataStorage;
+import me.honeyberries.invRestore.util.PlayerData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -24,7 +25,7 @@ import java.util.stream.Stream;
 public class InventoryViewCommand implements TabExecutor {
 
     private final InvRestore plugin = InvRestore.getInstance();
-    private final PlayerInventoryData playerInventoryData = PlayerInventoryData.getInstance();
+    private final PlayerDataStorage database = PlayerDataStorage.getInstance();
     private static final String RESTORE_INVENTORY_METADATA = InvRestore.getInstance().RESTORE_INVENTORY_METADATA;
     private static final String VIEW_PERMISSION = "invrestore.view";
 
@@ -102,10 +103,12 @@ public class InventoryViewCommand implements TabExecutor {
      * @return The saved inventory, or null if no inventory is found.
      */
     private ItemStack[] getSavedInventory(Player target, String type) {
-        if ("death".equals(type)) {
-            return playerInventoryData.getSavedInventory(target, true);
-        } else if ("save".equals(type)) {
-            return playerInventoryData.getSavedInventory(target, false);
+        boolean isDeathInventory = "death".equals(type);
+        if (isDeathInventory || "save".equals(type)) {
+            PlayerData playerData = database.getPlayerData(target, isDeathInventory);
+            if (playerData != null) {
+                return playerData.getInventoryContents();
+            }
         }
         return null;
     }
