@@ -80,11 +80,14 @@ public class InventorySaveCommand implements TabExecutor {
         sender.sendMessage(Component.text("Inventory saved for " + target.getName()).color(NamedTextColor.GREEN));
 
         if (sender != target) {
-            String senderName = (sender instanceof Player) ? ((Player) sender).getName() : "Console";
+            String senderName = (sender instanceof Player) ? sender.getName() : "Console";
             target.sendMessage(Component.text("Inventory saved by " + senderName).color(NamedTextColor.GREEN));
         }
 
         // Play a success sound for the target player
+        if (sender instanceof Player player)
+            player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+
         target.playSound(target.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
 
         return true;
