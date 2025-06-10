@@ -1,7 +1,7 @@
 package me.honeyberries.invRestore.command;
 
 import me.honeyberries.invRestore.InvRestore;
-import me.honeyberries.invRestore.storage.PlayerInventoryData;
+import me.honeyberries.invRestore.storage.PlayerDataStorage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -10,9 +10,9 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,8 +25,8 @@ public class InventorySaveCommand implements TabExecutor {
     // Instance of the main plugin class to access plugin methods and data
     private final InvRestore plugin = InvRestore.getInstance();
 
-    // Instance of PlayerInventoryData to access inventory data
-    private final PlayerInventoryData playerInventoryData = PlayerInventoryData.getInstance();
+    // Instance of PlayerDataStorage to access inventory data
+    private final PlayerDataStorage database = PlayerDataStorage.getInstance();
 
     private static final String SAVE_PERMISSION = "invrestore.save";
 
@@ -73,11 +73,8 @@ public class InventorySaveCommand implements TabExecutor {
             }
         }
 
-        // Get the player's inventory contents
-        ItemStack[] contents = target.getInventory().getContents();
-
-        // Save the player's inventory to the YAML file
-        playerInventoryData.saveInventory(target, contents, false);
+        // Save the player's inventory to the YAML file (not death inventory)
+        database.savePlayerData(target, false);
 
         // Notify the sender that the inventory was saved successfully
         sender.sendMessage(Component.text("Inventory saved for " + target.getName()).color(NamedTextColor.GREEN));
