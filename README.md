@@ -4,16 +4,16 @@ A simple Bukkit/Spigot plugin that allows players to restore inventories saved a
 
 ## Features
 
-- Automatically saves player inventory upon death.
-- Allows restoring the last death or manually saved inventory.
-- Offers inventory inspection with a GUI.
+- Automatically saves player playerInventory upon death.
+- Allows restoring the last death or manually saved playerInventory.
+- Offers playerInventory inspection with a GUI.
 - Config-based storage system using `inventories.yml`.
 
 ## Commands
 
-- **/invsave** [player]: Saves the current inventory for the sender or the specified player.
-- **/restore** \<death|save\> [player]: Restores death or saved inventory for yourself or another player.
-- **/invview** \<death|save\> [player]: Opens a GUI to view death or saved inventory for yourself or another player.
+- **/invsave** [player]: Saves the current playerInventory for the sender or the specified player.
+- **/restore** \<death|save\> [player]: Restores death or saved playerInventory for yourself or another player.
+- **/invview** \<death|save\> [player]: Opens a GUI to view death or saved playerInventory for yourself or another player.
 
 ## Permissions
 

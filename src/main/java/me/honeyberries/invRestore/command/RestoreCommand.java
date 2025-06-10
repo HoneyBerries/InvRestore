@@ -1,7 +1,7 @@
 package me.honeyberries.invRestore.command;
 
 import me.honeyberries.invRestore.InvRestore;
-import me.honeyberries.invRestore.storage.PlayerInventoryData;
+import me.honeyberries.invRestore.storage.PlayerDataStorage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -10,7 +10,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,12 +25,10 @@ public class RestoreCommand implements TabExecutor {
     // Instance of the main plugin class to access plugin methods and data
     private final InvRestore plugin = InvRestore.getInstance();
 
-    // Instance of PlayerInventoryData to access inventory data
-    private final PlayerInventoryData playerInventoryData = PlayerInventoryData.getInstance();
+    // Instance of PlayerDataStorage to access inventory data
+    private final PlayerDataStorage database = PlayerDataStorage.getInstance();
 
     private static final String RESTORE_PERMISSION = "invrestore.restore";
-
-
 
     /**
      * Executes the /restore command.
@@ -89,6 +86,7 @@ public class RestoreCommand implements TabExecutor {
         // Attempt to retrieve and restore inventory
         return restoreInventory(sender, target, isDeathInventory);
     }
+
     /**
      * Retrieves the appropriate inventory type based on the argument.
      *
@@ -107,7 +105,7 @@ public class RestoreCommand implements TabExecutor {
     }
 
     /**
-     * Attempts to restore the player's inventory using the PlayerInventoryData.
+     * Attempts to restore the player's inventory using the PlayerDataStorage.
      *
      * @param sender           The command sender.
      * @param target           The player whose inventory is being restored.
@@ -115,13 +113,10 @@ public class RestoreCommand implements TabExecutor {
      * @return True if the inventory was successfully restored, false otherwise.
      */
     private boolean restoreInventory(CommandSender sender, Player target, boolean isDeathInventory) {
+        // Attempt to restore the inventory using PlayerDataStorage
+        boolean success = database.restorePlayerData(target, isDeathInventory);
 
-        // Attempt to retrieve the inventory from PlayerInventoryData
-        ItemStack[] inventory = playerInventoryData.getSavedInventory(target, isDeathInventory);
-
-        // Check if inventory was found
-        if (inventory != null) {
-            target.getInventory().setContents(inventory);
+        if (success) {
             target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
             sender.sendMessage(Component.text("Inventory successfully restored for " + target.getName())
                     .color(NamedTextColor.GREEN));
@@ -132,8 +127,6 @@ public class RestoreCommand implements TabExecutor {
                 target.sendMessage(Component.text("Your inventory has been restored by " + senderName)
                         .color(NamedTextColor.GREEN));
             }
-
-        // Failure to restore inventory (no saved inventory found)
         } else {
             sender.sendMessage(Component.text("No saved inventory found.").color(NamedTextColor.YELLOW));
         }
