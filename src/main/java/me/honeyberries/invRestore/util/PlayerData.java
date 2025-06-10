@@ -44,12 +44,9 @@ public class PlayerData implements Serializable {
      * Constructs a new PlayerData object with the specified inventory and experience data.
      *
      * @param inventory   The player's inventory
-     * @param totalXp     The player's total experience points
-     * @param expLevel    The player's experience level
-     * @param expProgress The player's progress towards the next level (0.0 to 1.0)
      */
     public PlayerData(Inventory inventory, int totalXp, int expLevel, float expProgress) {
-        // Transient because Bukkit inventory is not serializable
+
         this.totalXp = totalXp;
         this.expLevel = expLevel;
         this.expProgress = expProgress;
@@ -138,33 +135,6 @@ public class PlayerData implements Serializable {
     }
 
     /**
-     * Gets the player's total experience points.
-     *
-     * @return The total experience points
-     */
-    public int getTotalXp() {
-        return totalXp;
-    }
-
-    /**
-     * Gets the player's experience level.
-     *
-     * @return The experience level
-     */
-    public int getExpLevel() {
-        return expLevel;
-    }
-
-    /**
-     * Gets the player's progress towards the next experience level.
-     *
-     * @return The progress as a float (0.0 to 1.0)
-     */
-    public float getExpProgress() {
-        return expProgress;
-    }
-
-    /**
      * Applies the stored inventory and experience data to a Player instance.
      *
      * @param player The player to apply the data to
@@ -180,10 +150,7 @@ public class PlayerData implements Serializable {
         }
 
         // Apply experience
-        player.setTotalExperience(0); // Reset XP to avoid odd behavior
-        player.setLevel(0);
-        player.setExp(0);
-        player.giveExp(totalXp);
+        player.setTotalExperience(totalXp);
         player.setLevel(expLevel);
         player.setExp(expProgress);
     }
