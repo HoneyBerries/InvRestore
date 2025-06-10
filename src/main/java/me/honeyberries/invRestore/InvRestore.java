@@ -5,8 +5,9 @@ import me.honeyberries.invRestore.command.InventoryViewCommand;
 import me.honeyberries.invRestore.command.RestoreCommand;
 import me.honeyberries.invRestore.listener.DeathListener;
 import me.honeyberries.invRestore.listener.GUIListener;
-import me.honeyberries.invRestore.storage.PlayerInventoryData;
+import me.honeyberries.invRestore.storage.PlayerDataStorage;
 import org.bukkit.plugin.java.JavaPlugin;
+
 import java.util.Objects;
 
 /**
@@ -26,8 +27,9 @@ public final class InvRestore extends JavaPlugin {
     public void onEnable() {
         getLogger().info("InvRestore has been enabled!");
 
-        // Load the plugin configuration
-        PlayerInventoryData.getInstance().load();
+        // Initialize and load the database
+        PlayerDataStorage.getInstance().init(this);
+        PlayerDataStorage.getInstance().loadSync();
 
         // Register events
         getServer().getPluginManager().registerEvents(new DeathListener(), this);
@@ -46,7 +48,7 @@ public final class InvRestore extends JavaPlugin {
     @Override
     public void onDisable() {
         // Save any pending data
-        PlayerInventoryData.getInstance().save();
+        PlayerDataStorage.getInstance().save();
 
         getLogger().info("InvRestore has been disabled!");
     }
