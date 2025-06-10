@@ -1,14 +1,13 @@
 package me.honeyberries.invRestore.listener;
 
-import me.honeyberries.invRestore.storage.PlayerInventoryData;
+import me.honeyberries.invRestore.storage.PlayerDataStorage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 /**
  * Listener class for handling player death events.
@@ -16,7 +15,7 @@ import org.bukkit.inventory.ItemStack;
  */
 public class DeathListener implements Listener {
 
-    private final PlayerInventoryData playerInventoryData = PlayerInventoryData.getInstance();
+    private final PlayerDataStorage database = PlayerDataStorage.getInstance();
 
     /**
      * Event handler for the PlayerDeathEvent.
@@ -25,18 +24,15 @@ public class DeathListener implements Listener {
      *
      * @param event The PlayerDeathEvent.
      */
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
 
-        // Get a copy of the player's inventory contents before any modifications
-        ItemStack[] contents = player.getInventory().getContents().clone();
-
-        // Save the player's inventory to the YAML file
-        playerInventoryData.saveInventory(player, contents, true);
+        // Save the player's inventory and XP
+        database.savePlayerData(player, true);
 
         // Notify the player that their inventory has been saved
-        //player.sendMessage(Component.text("Your inventory has been saved. Use /inventoryrestore death to restore it.")
-                //.color(NamedTextColor.GREEN));
+        player.sendMessage(Component.text("Your inventory has been saved.")
+                .color(NamedTextColor.AQUA));
     }
 }
