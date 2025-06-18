@@ -12,30 +12,34 @@ import java.util.Objects;
 
 /**
  * The main plugin class for InvRestore.
- * This plugin allows players to save, view, and restore their inventories.
+ * This plugin allows server administrators and players to save, restore, and view inventories.
+ * Inventories can be saved on player death or manually with commands.
  */
 public final class InvRestore extends JavaPlugin {
 
-    public final String RESTORE_INVENTORY_METADATA = "restoreInventoryOpen";
-
+    /**
+     * Metadata key used to track when a player has a restore inventory GUI open.
+     * This prevents conflicts with other inventory interactions.
+     */
+    public static final String RESTORE_INVENTORY_METADATA = "restoreInventoryOpen";
 
     /**
      * Called when the plugin is enabled.
-     * Registers listeners and commands.
+     * Initializes the database, registers event listeners, and sets up commands.
      */
     @Override
     public void onEnable() {
         getLogger().info("InvRestore has been enabled!");
 
-        // Initialize and load the database
+        // Initialize and load the player data storage system
         PlayerDataStorage.getInstance().init(this);
         PlayerDataStorage.getInstance().loadSync();
 
-        // Register events
+        // Register event listeners
         getServer().getPluginManager().registerEvents(new DeathListener(), this);
         getServer().getPluginManager().registerEvents(new GUIListener(), this);
 
-        // Register commands with their correct base names from plugin.yml
+        // Register commands with their command executors
         Objects.requireNonNull(getCommand("inventoryrestore")).setExecutor(new RestoreCommand());
         Objects.requireNonNull(getCommand("inventorysave")).setExecutor(new InventorySaveCommand());
         Objects.requireNonNull(getCommand("inventorysaveview")).setExecutor(new InventoryViewCommand());
@@ -43,25 +47,23 @@ public final class InvRestore extends JavaPlugin {
 
     /**
      * Called when the plugin is disabled.
-     * Ensures all data is saved before shutdown.
+     * Ensures all player data is saved to disk before shutdown.
      */
     @Override
     public void onDisable() {
-        // Save any pending data
+        // Save all pending player data to disk
         PlayerDataStorage.getInstance().save();
 
         getLogger().info("InvRestore has been disabled!");
     }
 
-
     /**
-     * Gets the instance of the InvRestore plugin.
+     * Gets the singleton instance of the InvRestore plugin.
+     * Provides static access to the plugin from other classes.
      *
      * @return The InvRestore plugin instance.
      */
     public static InvRestore getInstance() {
         return getPlugin(InvRestore.class);
     }
-
 }
-
